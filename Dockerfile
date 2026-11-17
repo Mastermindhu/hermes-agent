@@ -587,4 +587,4 @@ CMD [ ]
 # Isolated Railway image-fit preflight. No gateway, cron or messaging poller.
 # This entrypoint intentionally bypasses s6 and all Hermes startup hooks.
 ENTRYPOINT []
-CMD ["/opt/hermes/.venv/bin/python", "-u", "-c", "import os,shutil,sys,http.server; import yaml,aiohttp; print('ISOLATED_PREFLIGHT_OK python='+sys.version.split()[0]+' ffmpeg='+str(bool(shutil.which('ffmpeg'))),flush=True); http.server.HTTPServer(('0.0.0.0',int(os.environ.get('PORT','8080'))),http.server.BaseHTTPRequestHandler).serve_forever()"]
+CMD ["/opt/hermes/.venv/bin/python", "-u", "-c", "import os,shutil,sys,http.server; import hermes_yaml,aiohttp; print('ISOLATED_PREFLIGHT_OK python='+sys.version.split()[0]+' ffmpeg='+str(bool(shutil.which('ffmpeg'))),flush=True); http.server.HTTPServer(('0.0.0.0',int(os.environ.get('PORT','8080'))),http.server.BaseHTTPRequestHandler).serve_forever()"]
