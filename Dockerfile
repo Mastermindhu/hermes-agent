@@ -588,6 +588,13 @@ CMD [ ]
 RUN git clone --no-checkout https://github.com/ahtishamdilawar/hermes-whatsapp-agent-platform.git /opt/hermes/isolated-plugin && \
     cd /opt/hermes/isolated-plugin && git checkout --detach 08226258160b51983a32dfbeb2d80b1129592f64 && \
     /opt/hermes/.venv/bin/python -c "from pathlib import Path; p=Path('client.py'); s=p.read_text(); old='timeout=httpx.Timeout(timeout + 15.0, connect=10.0)'; assert s.count(old)==1; p.write_text(s.replace(old, 'timeout=httpx.Timeout(timeout + 45.0, connect=10.0)'))"
+
+# Local-only speech recognition. Pin PyAV because 19.x removed metadata_errors.
+# Model weights live on /opt/data and are prepared separately; no recordings upload.
+RUN /opt/hermes/.venv/bin/python -m ensurepip && \
+    /opt/hermes/.venv/bin/python -m pip install --no-cache-dir faster-whisper==1.2.1 av==16.1.0 && \
+    /opt/hermes/.venv/bin/python -c "import faster_whisper, av; assert av.__version__ == '16.1.0'"
+
 # No credentials, adapter instance, gateway, cron or messaging poller.
 ENTRYPOINT []
 CMD ["/opt/hermes/.venv/bin/python", "-u", "-c", "import os,sys,shutil,http.server,importlib.util,types\nimport hermes_yaml,aiohttp\nfrom toolsets import TOOLSETS\nwanted='memory web browser terminal file skills todo cronjob vision image_gen delegation code_execution session_search clarify tts'.split()\nassert all(n in TOOLSETS for n in wanted)\nassert len(wanted)==15\nspec=importlib.util.spec_from_file_location('isolated_wap','/opt/hermes/isolated-plugin/__init__.py',submodule_search_locations=['/opt/hermes/isolated-plugin'])\nmodule=importlib.util.module_from_spec(spec);sys.modules[spec.name]=module;spec.loader.exec_module(module)\nregistered=[]\nmodule.register(types.SimpleNamespace(register_platform=lambda **kw: registered.append(kw)))\nassert len(registered)==1 and registered[0]['name']=='whatsapp_agent_platform'\nassert registered[0]['check_fn']()\nassert 'timeout + 45.0' in open('/opt/hermes/isolated-plugin/client.py').read()\nprint('ISOLATED_COMPAT_OK plugin_import_register=True toolset_definitions=15 ffmpeg='+str(bool(shutil.which('ffmpeg')))+' gateway_started=False',flush=True)\nhttp.server.HTTPServer(('0.0.0.0',int(os.environ.get('PORT','8080'))),http.server.BaseHTTPRequestHandler).serve_forever()\n"]
